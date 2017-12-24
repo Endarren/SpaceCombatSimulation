@@ -1,4 +1,4 @@
-﻿using Assets.Src.Interfaces;
+using Assets.Src.Interfaces;
 using Assets.Src.Rocket;
 using Assets.Src.Targeting;
 using Assets.Src.Targeting.TargetPickers;
@@ -8,6 +8,7 @@ using System.Linq;
 using Assets.Src.Pilots;
 using Assets.Src.ObjectManagement;
 using System;
+using System.Collections;
 
 public class RocketController : MonoBehaviour
 {
@@ -71,7 +72,10 @@ public class RocketController : MonoBehaviour
     public float MinimumFriendlyDetectionDistance = 4;
 
     public FuelTank Tank;
-
+	/// <summary>
+	/// The delay between each update.  If zero, no delay is used.
+	/// </summary>
+	public float updateEvery = 0f;
     // Use this for initialization
     void Start()
     {
@@ -106,8 +110,34 @@ public class RocketController : MonoBehaviour
         {
             name = transform.name
         };
+		StartCoroutine(RocketRoutine());
     }
+	/// <summary>
+	/// This coroutine does what the RocketController used to do in FixedUpdate.  It will not be updated as frequently, but it reduces the performace cost of doing it in FixedUpdate.
+	/// </summary>
+	/// <returns></returns>
+	IEnumerator RocketRoutine ()
+	{
+		while(TimeToLive > 0f)
+		{
+			if (_runner != null)
+			{
+				_runner.RunRocket();
+				TimeToLive -= Time.deltaTime;
+				if (updateEvery == 0f)
+					yield return null;
+				else
+					yield return new WaitForSeconds(updateEvery); //Coroutine waits for the number of seconds before resuming.  Allows other code to be processed while waiting.
+			}
+			else
+			{
+				Debug.Log("Runner is null! " + transform.name);
+			}
+		}
+		_detonator.DetonateNow();
 
+	}
+	/*
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -125,4 +155,5 @@ public class RocketController : MonoBehaviour
         }
         TimeToLive -= Time.deltaTime;
     }
+	*/
 }
